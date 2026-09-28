@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rover Vision | AI Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap');
+        :root { --black: #080b0d; --panel: #11171b; --panel-2: #182126; --line: #2d3b40; --white: #ecf3ef; --muted: #84949a; --green: #a5e85d; --amber: #f3b75e; --red: #f16f5c; --blue: #72d9e7; }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; overflow-x: hidden; color: var(--white); background: radial-gradient(circle at 50% -20%, #29383a 0, var(--black) 55%); font-family: Manrope, sans-serif; }
+        body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .2; background-image: linear-gradient(rgba(165,232,93,.12) 1px, transparent 1px), linear-gradient(90deg, rgba(165,232,93,.12) 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to bottom, black, transparent 80%); }
+        .app { width: min(1500px, 100%); min-height: 100vh; margin: auto; padding: 22px clamp(16px, 4vw, 55px) 38px; }
+        header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+        .brand { display: flex; align-items: center; gap: 12px; font: 700 19px 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+        .brand-mark { display: grid; place-items: center; width: 33px; height: 33px; color: var(--black); background: var(--green); border-radius: 5px; transform: skew(-8deg); }
+        .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font: 10px 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+        .status-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 12px var(--green); }
+        .cockpit { position: relative; display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: clamp(16px, 4vw, 70px); align-items: center; min-height: 690px; padding: 48px 0 22px; }
+        .copy { align-self: start; padding-top: 70px; }
+        .kicker { color: var(--green); font: 10px 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; }
+        h1 { max-width: 390px; margin: 13px 0 15px; font: 600 clamp(45px, 6vw, 83px)/.86 'Barlow Condensed', sans-serif; letter-spacing: -.02em; text-transform: uppercase; }
+        h1 span { color: var(--amber); }
+        .copy p { max-width: 310px; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+        .specs { display: flex; gap: 22px; margin-top: 34px; color: var(--muted); font: 10px 'DM Mono', monospace; letter-spacing: .05em; text-transform: uppercase; }
+        .specs strong { display: block; margin-bottom: 4px; color: var(--white); font-size: 15px; }
+        .dashboard { position: relative; display: grid; place-items: center; min-height: 560px; }
+        .dashboard::before { content: ''; position: absolute; width: 125%; height: 68%; bottom: 3%; border: 1px solid #33464a; border-radius: 50% 50% 7% 7%; background: linear-gradient(180deg, rgba(36,54,57,.55), rgba(7,10,12,.9)); box-shadow: inset 0 35px 55px rgba(0,0,0,.45), 0 20px 70px rgba(0,0,0,.5); transform: perspective(500px) rotateX(18deg); }
+        .windshield { position: absolute; top: 3%; width: 114%; height: 43%; border: 1px solid #34474b; background: linear-gradient(130deg, rgba(88,127,126,.18), rgba(10,19,22,.2)); clip-path: polygon(10% 0, 90% 0, 100% 100%, 0 100%); box-shadow: inset 0 -60px 60px rgba(0,0,0,.65); }
+        .windshield::after { content: 'ROVER VISION / 4WD ANALYSIS SYSTEM'; position: absolute; top: 18px; left: 0; width: 100%; color: rgba(165,232,93,.45); text-align: center; font: 9px 'DM Mono', monospace; letter-spacing: .16em; }
+        .gauge-row { position: relative; z-index: 2; display: flex; gap: 15px; align-items: center; }
+        .gauge { position: relative; display: grid; place-items: center; width: clamp(145px, 16vw, 205px); height: clamp(145px, 16vw, 205px); border: 9px solid #202d32; border-radius: 50%; background: radial-gradient(circle, #182328 0 48%, #0a0f11 49%); box-shadow: 0 0 0 2px #526368, inset 0 0 23px #000, 0 12px 35px #000; }
+        .gauge::before { content: ''; position: absolute; inset: 11px; border: 1px dashed #65777b; border-radius: 50%; }
+        .gauge::after { content: '◦  ◦  ◦  ◦  ◦  ◦  ◦  ◦'; position: absolute; top: 22px; color: var(--green); font-size: 12px; letter-spacing: 6px; opacity: .8; }
+        .gauge-label { position: absolute; bottom: 38px; color: var(--muted); font: 10px 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+        .gauge-value { margin-top: 12px; color: var(--white); font: 700 clamp(28px, 4vw, 44px) 'Barlow Condensed', sans-serif; }
+        .gauge-value small { color: var(--amber); font: 10px 'DM Mono', monospace; }
+        .needle { position: absolute; left: 50%; bottom: 50%; z-index: 3; width: 3px; height: 42%; background: var(--red); transform-origin: bottom; transform: translateX(-50%) rotate(-48deg); box-shadow: 0 0 10px var(--red); }
+            .home-button { display: inline-block; margin-top: 17px; padding: 11px 15px; color: var(--black); background: var(--green); border: 1px solid var(--green); border-radius: 3px; font: 700 11px 'DM Mono', monospace; text-decoration: none; text-transform: uppercase; transition: .2s ease; }
+            .home-button:hover { color: var(--black); background: var(--amber); border-color: var(--amber); transform: translateY(-2px); }
+        .needle::after { content: ''; position: absolute; bottom: -7px; left: -5px; width: 13px; height: 13px; background: #dbe8e5; border: 3px solid #26373b; border-radius: 50%; }
+        .processing .needle.speed { animation: revSpeed 3s cubic-bezier(.5, 0, .55, 1) both; }
+        .processing .needle.rpm { animation: revRpm 3s cubic-bezier(.5, 0, .55, 1) both; }
+        .processing .gauge-value { animation: valueFlash 3s ease both; }
+        .initial-only { transition: opacity .35s ease, transform .35s ease; }
+        .processing .initial-only { opacity: 0; pointer-events: none; transform: translateY(16px); }
+        .result-mode .initial-only { opacity: 0; pointer-events: none; transform: translateY(16px); }
+        .processing .processing-stage { opacity: 1; pointer-events: auto; }
+        .processing-stage { position: absolute; inset: 0; z-index: 5; display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .4s ease; }
+        .processing-stage .processing-copy { margin-top: 360px; color: var(--green); text-align: center; font: 11px 'DM Mono', monospace; letter-spacing: .15em; text-transform: uppercase; animation: pulseText .8s ease-in-out infinite alternate; }
+        .turns { position: absolute; z-index: 3; top: 46%; display: flex; justify-content: space-between; width: 105%; color: var(--green); font-size: 30px; }
+        .turns span { animation: blink 1s step-end infinite; text-shadow: 0 0 14px var(--green); }
+        .processing .turns span { animation: none; opacity: 0; }
+        .console { position: relative; z-index: 4; width: min(100%, 430px); padding: 17px; background: rgba(12,19,21,.93); border: 1px solid #3c5053; box-shadow: 0 20px 40px #000; }
+        .console-head { display: flex; justify-content: space-between; margin-bottom: 13px; color: var(--muted); font: 10px 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+        .upload-zone { position: relative; display: grid; place-items: center; min-height: 145px; overflow: hidden; border: 1px dashed #687c78; background: #162127; text-align: center; cursor: pointer; transition: .25s ease; }
+        .upload-zone:hover { border-color: var(--green); background: #1a2d2c; box-shadow: 0 0 25px rgba(165,232,93,.16); }
+        .upload-zone::before, .upload-zone::after { content: ''; position: absolute; width: 12px; height: 12px; border-color: var(--green); border-style: solid; animation: cornerBlink 1s step-end infinite; }
+        .upload-zone::before { top: 9px; left: 9px; border-width: 2px 0 0 2px; } .upload-zone::after { right: 9px; bottom: 9px; border-width: 0 2px 2px 0; animation-delay: .5s; }
+        .upload-zone input { position: absolute; inset: 0; z-index: 2; opacity: 0; cursor: pointer; }
+        .upload-icon { display: grid; place-items: center; width: 40px; height: 40px; margin: 0 auto 9px; color: var(--black); background: var(--green); border-radius: 50%; font-size: 21px; }
+        .upload-zone strong { display: block; font-size: 13px; } .upload-zone small { display: block; margin-top: 6px; color: var(--muted); font: 10px 'DM Mono', monospace; }
+        .file-name { display: block; min-height: 15px; margin-top: 8px; color: var(--amber); font: 10px 'DM Mono', monospace; }
+        .controls { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; margin-top: 13px; }
+        label { display: block; margin-bottom: 6px; color: var(--muted); font: 9px 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+        select, button { width: 100%; padding: 11px 12px; border: 1px solid #415258; border-radius: 3px; font: 11px 'DM Mono', monospace; }
+        select { color: var(--white); background: #0f171b; } button { width: auto; color: var(--black); background: var(--green); border-color: var(--green); font-weight: 700; cursor: pointer; transition: .2s ease; } button:hover { background: var(--amber); border-color: var(--amber); transform: translateY(-2px); }
+        .start-stop-button { position: relative; display: grid; place-items: center; width: 78px; height: 78px; padding: 0; overflow: visible; background: transparent; border: 0; border-radius: 50%; }
+        .start-stop-button img { display: block; width: 78px; height: 78px; object-fit: contain; filter: drop-shadow(0 5px 8px rgba(0,0,0,.65)); transition: transform .2s ease, filter .2s ease; }
+        .start-stop-button::after { content: ''; position: absolute; top: 17px; left: 50%; width: 19px; height: 9px; border-radius: 50%; background: #ffe66d; transform: translateX(-50%); opacity: .25; pointer-events: none; animation: engineLight .85s step-end infinite; }
+        .start-stop-button:hover img { transform: scale(1.08); filter: drop-shadow(0 0 12px rgba(165,232,93,.75)); }
+        .start-stop-button:active img { transform: scale(.96); }
+        .result { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; padding: 35px; opacity: 0; pointer-events: none; background: rgba(8,11,13,.96); transition: opacity .55s ease; }
+        .result.visible { opacity: 1; pointer-events: auto; }
+        .result::before, .result::after { content: ''; position: absolute; top: 0; bottom: 0; width: 28%; opacity: 0; transition: opacity .5s ease; pointer-events: none; }
+        .result::before { left: 0; background: linear-gradient(90deg, rgba(255,244,183,.5), transparent); transform: skewX(-14deg); } .result::after { right: 0; background: linear-gradient(-90deg, rgba(255,244,183,.5), transparent); transform: skewX(14deg); }
+        .result.headlights-on::before, .result.headlights-on::after { opacity: 1; animation: beam 1.4s ease-in-out infinite alternate; }
+        .result-card { position: relative; width: min(760px, 100%); padding: 24px; background: #111a1e; border: 1px solid #4c665b; box-shadow: 0 0 45px rgba(165,232,93,.15); }
+        .result-top { display: flex; justify-content: space-between; margin-bottom: 15px; } .result-title { margin: 0; color: var(--green); font: 700 27px 'Barlow Condensed', sans-serif; letter-spacing: .05em; text-transform: uppercase; }
+        .result-card img { display: block; width: 100%; max-height: 280px; object-fit: contain; background: #080b0d; } .result-card pre { min-height: 75px; margin: 15px 0 0; padding: 14px; overflow: auto; white-space: pre-wrap; color: #dcece5; background: #080b0d; border-left: 3px solid var(--amber); font: 12px/1.6 'DM Mono', monospace; }
+        .notice { margin: 0 0 15px; padding: 11px; color: #ffc5b9; background: rgba(241,111,92,.12); border-left: 3px solid var(--red); font-size: 12px; }
+        .empty-result { color: var(--muted); font: 11px 'DM Mono', monospace; }
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        audio { display: none; }
+        @keyframes blink { 50% { opacity: .15; } } @keyframes cornerBlink { 50% { opacity: .2; } }
+        @keyframes revSpeed { 0% { transform: translateX(-50%) rotate(-48deg); } 45% { transform: translateX(-50%) rotate(47deg); } 68% { transform: translateX(-50%) rotate(70deg); } 100% { transform: translateX(-50%) rotate(-48deg); } }
+        @keyframes revRpm { 0% { transform: translateX(-50%) rotate(-48deg); } 40% { transform: translateX(-50%) rotate(65deg); } 62% { transform: translateX(-50%) rotate(78deg); } 100% { transform: translateX(-50%) rotate(-48deg); } }
+        @keyframes valueFlash { 0%, 100% { opacity: .5; } 45%, 65% { color: var(--red); opacity: 1; } }
+        @keyframes pulseText { to { opacity: .35; } } @keyframes beam { to { opacity: .45; } }
+        @keyframes engineLight { 50% { opacity: 1; box-shadow: 0 0 13px 5px rgba(255,230,109,.8); } }
+        @media (max-width: 850px) { .cockpit { grid-template-columns: 1fr; padding-top: 35px; } .copy { padding-top: 10px; text-align: center; } .copy p, h1 { margin-left: auto; margin-right: auto; } .specs { justify-content: center; } .dashboard { min-height: 570px; } }
+        @media (max-width: 520px) { .app { padding: 16px 12px 25px; } header { padding-bottom: 14px; } .status { font-size: 8px; } .gauge-row { gap: 4px; transform: scale(.83); } .dashboard::before { width: 150%; } .console { width: 108%; } .processing-stage .processing-copy { margin-top: 340px; } .result { padding: 15px; } .result-card { padding: 15px; } }
+        @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header><div class="brand"><span class="brand-mark">+</span> Rover Vision</div><div class="status"><span class="status-dot"></span> System online / local CPU mode</div></header>
+        <main class="cockpit" id="cockpit">
+            <section class="copy initial-only"><div class="kicker">Luxury utility intelligence</div><h1>Drive your image <span>analysis.</span></h1><p>Upload a road view, document, or object photo. The onboard vision system will process it locally.</p><div class="specs"><div><strong>OCR</strong>TEXT READ</div><div><strong>YOLO</strong>OBJECT SCAN</div><div><strong>3.0s</strong>REV CYCLE</div></div></section>
+            <section class="dashboard">
+                <div class="windshield initial-only"></div>
+                <div class="turns initial-only" aria-label="Turn indicators"><span>◀</span><span>▶</span></div>
+                <div class="gauge-row processing-stage" aria-label="Processing gauges"><div class="gauge"><span class="needle speed"></span><span class="gauge-value"><span id="speed-number">0</span><small> km/h</small></span><span class="gauge-label">Speed</span></div><div class="gauge"><span class="needle rpm"></span><span class="gauge-value"><span id="rpm-number">0</span><small> rpm</small></span><span class="gauge-label">Engine</span></div></div>
+                <div class="processing-stage"><div class="processing-copy">Let's buckle up<br><span>Scanning image / revving analysis engine</span></div></div>
+                <div class="console initial-only"><div class="console-head"><span>Center console / input</span><span>Ready</span></div><form id="analysis-form" method="post" enctype="multipart/form-data">{% csrf_token %}<label class="upload-zone" for="image"><input type="file" id="image" name="image" accept=".jpg,.jpeg,.png,image/jpeg,image/png" required><span><span class="upload-icon">↑</span><strong>Load image into vehicle</strong><small>JPG / JPEG / PNG · max local scan</small><span class="file-name" id="file-name"></span></span></label><div class="controls"><div><label for="mode">Drive mode</label><select id="mode" name="mode"><option value="OCR">OCR / Extract text</option><option value="YOLO">YOLO / Detect objects</option></select></div><button class="start-stop-button" type="submit" aria-label="Push to start"><img src="/media/start%20stop.png" alt="Push to start"></button></div></form></div>
+            </section>
+            <section class="result {% if result or error %}server-result{% endif %}" id="result"><div class="result-card"><div class="result-top"><h2 class="result-title">Analysis complete</h2><span class="kicker">Headlights on</span></div>{% if error %}<p class="notice" role="alert">{{ error }}</p>{% endif %}{% if image_url %}<img src="{{ image_url }}" alt="Processed upload">{% else %}<div class="empty-result">No processed image loaded.</div>{% endif %}{% if result %}<pre>{{ result }}</pre>{% endif %}<a class="home-button" href="/">← Back to home</a></div></section>
+        </main>
+        <audio id="horn-audio" preload="auto"><source src="/media/Car%20Horn%20Sound%20Effect.mp3" type="audio/mpeg"></audio>
+    </div>
+    <script>
+        const body = document.body;
+        const form = document.getElementById('analysis-form');
+        const input = document.getElementById('image');
+        const fileName = document.getElementById('file-name');
+        const result = document.getElementById('result');
+        const horn = document.getElementById('horn-audio');
+        const speedNumber = document.getElementById('speed-number');
+        const rpmNumber = document.getElementById('rpm-number');
+        let submitted = false;
+
+        input.addEventListener('change', () => { fileName.textContent = input.files[0] ? input.files[0].name : ''; });
+        function animateGaugeNumbers() {
+            const startedAt = performance.now();
+            function update(now) {
+                const progress = Math.min((now - startedAt) / 3000, 1);
+                const cycle = progress < .68 ? progress / .68 : (1 - progress) / .32;
+                const value = Math.round(Math.max(0, Math.min(1, cycle)) * 199);
+                speedNumber.textContent = value;
+                rpmNumber.textContent = value;
+                if (progress < 1) window.requestAnimationFrame(update);
+            }
+            window.requestAnimationFrame(update);
+        }
+
+        form.addEventListener('submit', event => {
+            if (submitted) return;
+            event.preventDefault();
+            submitted = true;
+            body.classList.add('processing');
+            animateGaugeNumbers();
+            window.setTimeout(() => form.submit(), 3000);
+        });
+
+        if (result.classList.contains('server-result')) {
+            body.classList.add('result-mode');
+            window.requestAnimationFrame(() => {
+                result.classList.add('visible', 'headlights-on');
+                horn.currentTime = 0;
+                horn.play().catch(() => document.addEventListener('pointerdown', () => { horn.currentTime = 0; horn.play(); }, { once: true }));
+            });
+        }
+    </script>
+</body>
+</html>
